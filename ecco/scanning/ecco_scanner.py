@@ -3,6 +3,7 @@ import os
 
 from ..utils.ecco_logging import EccoFileNotFound, EccoSyntaxError
 from .ecco_token import Token, TokenType
+from .character_type import CharacterType
 
 
 class Scanner:
@@ -21,6 +22,8 @@ class Scanner:
 
         self.initialized: bool = False
         self.current_token = Token()
+        
+        self.next_character_type: CharacterType
 
     # def __enter__(self: Scanner): -> Scanner:
     def __enter__(self):
@@ -51,30 +54,36 @@ class Scanner:
     def close(self) -> None:
         self.__exit__(None, None, None)
 
-    def next_character(self) -> str:
+    def get_next_character(self) -> str:
         """Get the next character from the input stream
 
         Returns:
             str: The next character from the input stream
         """
-        c: str = ""
+        next_character: str
 
-        # If we have a character in the putback buffer,
-        # we want to read that first, then empty the
-        # buffer
         if self.put_back_buffer:
-            c = self.put_back_buffer
-            self.put_back_buffer = ""
-            return c
+            # Read the putback buffer first
+            next_character = self.put_back_buffer
+            self.put_back_buffer = ""  # Empty the buffer
+        else:
+            # Otherwise, we read a single character from
+            # the open input file, and conditionally
+            # increment our rudimentary line counter
+            next_character = self.file.read(1)
+            if next_character == "\n":
+                self.line_number += 1
 
-        # Otherwise, we read a single character from
-        # the open input file, and conditionally
-        # increment our rudimentary line counter
-        c = self.file.read(1)
-        if c == "\n":
-            self.line_number += 1
+        if next_character == '\0':
+            self.next_character_type = CharacterType.END_OF_FILE
+        elif next_character.isalpha():
+            self.next_character_type = CharacterType.ALPHA
+        elif next_character.isnumeric():
+            self.next_character_type = CharacterType.NUMERIC
+        else:
+            self.next_character_type = CharacterType.NON_ALPHANUMERIC
 
-        return c
+        return next_character
 
     def skip(self) -> str:
         """Gets the next non-whitespace character from the input stream
@@ -82,9 +91,9 @@ class Scanner:
         Returns:
             str: The next non-whitespace character from the input stream
         """
-        c: str = self.next_character()
+        c: str = self.get_next_character()
         while c.isspace():
-            c = self.next_character()
+            c = self.get_next_character()
         return c
 
     def put_back(self, c: str) -> None:
@@ -113,7 +122,7 @@ class Scanner:
 
         while c.isdigit():
             in_string += c
-            c = self.next_character()
+            c = self.get_next_character()
 
         self.put_back(c)
 
@@ -129,33 +138,58 @@ class Scanner:
             EccoSyntaxError: If an unrecognized Token is reached
 
         Returns:
-            bool: True if a Token was read, False if EOF was reached
+            Token:
         """
-        c: str = self.skip()
+        next_character: str = self.skip()
 
-        # Check for EOF
-        if c == "":
+        # # Check for EOF
+        # if next_character == "":
+        #     self.current_token.type = TokenType.EOF
+        #     return self.current_token
+
+        # possible_token_types: List[TokenType] = []
+        # for token_type in TokenType:
+        #     if str(token_type)[0] == next_character:
+        #         possible_token_types.append(token_type)
+
+        # if not len(possible_token_types):
+        #     if next_character.isdigit():
+        #         self.current_token.type = TokenType.INTEGER_LITERAL
+        #         self.current_token.value = self.scan_integer_literal(next_character)
+        #     else:
+        #         raise EccoSyntaxError(f'Unrecognized token "{next_character}"')
+        # else:
+        #     if len(next_character) == 1:
+        #         self.current_token.type = possible_token_types[0]
+        #         return self.current_token
+        #     else:
+        #         # TODO: Implement multiple token with the same first character
+        #         pass
+        
+
+        if self.next_character_type == CharacterType.END_OF_FILE:
             self.current_token.type = TokenType.EOF
-            return self.current_token
-
-        possible_token_types: List[TokenType] = []
-        for token_type in TokenType:
-            if str(token_type)[0] == c:
-                possible_token_types.append(token_type)
-
-        if not len(possible_token_types):
-            if c.isdigit():
-                self.current_token.type = TokenType.INTEGER_LITERAL
-                self.current_token.value = self.scan_integer_literal(c)
-            else:
-                raise EccoSyntaxError(f'Unrecognized token "{c}"')
-        else:
-            if len(c) == 1:
-                self.current_token.type = possible_token_types[0]
-                return self.current_token
-            else:
-                # TODO: Implement multiple token with the same first character
-                pass
+        elif self.next_character_type == CharacterType.NUMERIC:
+            self.current_token.type = TokenType.INTEGER_LITERAL
+            self.current_token.value = self.scan_integer_literal(next_character)
+        elif self.next_character_type == CharacterType.ALPHA:
+            # self.lexeme += next_character
+            # next_character = self.get_next_character()
+            # while (
+            #     self.next_character_type == CharacterType.ALPHA or
+            #     self.next_character_type == CharacterType.NUMERIC or
+            #     next_character == '_'
+            # ):
+            #     self.lexeme += next_character
+            #     next_character = self.get_next_character()
+            # #
+            # self.put_back(next_character)
+            # # TODO: Handle lexeme starting with alphabet
+            # # self.current_token.type =
+            # self.current_token.value = self.lexeme
+            pass
+        elif self.next_character_type == CharacterType.NON_ALPHANUMERIC:
+            self.scan_non_alphanumeric(next_character)
 
         return self.current_token
 
@@ -163,3 +197,17 @@ class Scanner:
         """Scans a file and prints out its Tokens"""
         while self.scan():
             print(self.current_token)
+
+    def scan_non_alphanumeric(self, character: str) -> None:
+        """Scans non-alphanumeric token into current_token"""
+        next_character = self.get_next_character()
+        lexeme = character + next_character
+
+        token_values = [token_type.value for token_type in TokenType]
+        while lexeme in token_values:
+            next_character = self.get_next_character()
+            lexeme += next_character
+        # 
+        self.put_back(next_character)
+        self.current_token.type = TokenType(lexeme)
+        
