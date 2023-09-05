@@ -16,9 +16,11 @@ def main():
     setup_tracebacks()
     GLOBAL_SCANNER.scan()
 
+    # Import from .parsing after initialzing GLOBAL_SCANNER
+    # To avoid "partially initialized" error (most likely a circular import)
     from .parsing import (
         parse_binary_expression,
-    )  # We do this to avoid "partially initialized" errors with GLOBAL_SCANNER
+    )
 
     parsed_ast = parse_binary_expression()
 
@@ -26,10 +28,10 @@ def main():
         left_value: int
         right_value: int
         
-        if root.left:
-            left_value = interpret_ast(root.left)
-        if root.right:
-            right_value = interpret_ast(root.right)
+        if root.left_child:
+            left_value = interpret_ast(root.left_child)
+        if root.right_child:
+            right_value = interpret_ast(root.right_child)
 
         if root.token.type == TokenType.PLUS:
             return left_value + right_value

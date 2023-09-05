@@ -43,6 +43,9 @@ class Scanner:
         self.file.close()
 
     def open(self) -> None:
+        """Raises:
+            EccoFileNotFound
+        """
         self.__enter__()
 
     def close(self) -> None:
