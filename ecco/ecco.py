@@ -33,7 +33,11 @@ def main():
         if root.right_child:
             right_value = interpret_ast(root.right_child)
 
-        if root.token.type == TokenType.PLUS:
+        if root.token.type == TokenType.LEFT_SHIFT:
+            return left_value << right_value
+        elif root.token.type == TokenType.RIGHT_SHIFT:
+            return left_value >> right_value
+        elif root.token.type == TokenType.PLUS:
             return left_value + right_value
         elif root.token.type == TokenType.MINUS:
             return left_value - right_value

@@ -6,6 +6,8 @@ class TokenType(Enum):
     UNKNOWN_TOKEN = "unknown token"
 
     # Operators
+    LEFT_SHIFT = "<<"
+    RIGHT_SHIFT = ">>"
     PLUS = "+"
     MINUS = "-"
     STAR = "*"
@@ -13,6 +15,7 @@ class TokenType(Enum):
 
     # Literals
     INTEGER_LITERAL = "integer literal"
+
     EOF = "EOF"
 
     def __str__(self) -> str:

@@ -5,6 +5,8 @@ from ..utils import EccoSyntaxError
 from typing import Dict
 
 OPERATOR_PRECEDENCE: Dict[TokenType, int] = {
+    TokenType.LEFT_SHIFT: 11,
+    TokenType.RIGHT_SHIFT: 11,
     TokenType.PLUS: 12,
     TokenType.MINUS: 12,
     TokenType.STAR: 13,

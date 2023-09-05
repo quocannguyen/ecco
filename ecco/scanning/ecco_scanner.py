@@ -154,6 +154,7 @@ class Scanner:
                 self.current_token.type = possible_token_types[0]
                 return self.current_token
             else:
+                # TODO: Implement multiple token with the same first character
                 pass
 
         return self.current_token
