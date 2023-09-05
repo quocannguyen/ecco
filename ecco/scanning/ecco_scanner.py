@@ -20,6 +20,7 @@ class Scanner:
         self.line_number: int = 1
 
         self.initialized: bool = False
+        self.current_token = Token()
 
     # def __enter__(self: Scanner): -> Scanner:
     def __enter__(self):
@@ -40,6 +41,12 @@ class Scanner:
     def __exit__(self, _, __, ___):
         """Closes the program file"""
         self.file.close()
+
+    def open(self) -> None:
+        self.__enter__()
+
+    def close(self) -> None:
+        self.__exit__(None, None, None)
 
     def next_character(self) -> str:
         """Get the next character from the input stream
@@ -109,7 +116,7 @@ class Scanner:
 
         return int(in_string)
 
-    def scan(self, current_token: Token) -> bool:
+    def scan(self) -> Token:
         """Scan the next token
 
         Args:
@@ -125,7 +132,8 @@ class Scanner:
 
         # Check for EOF
         if c == "":
-            return False
+            self.current_token.type = TokenType.EOF
+            return self.current_token
 
         possible_token_types: List[TokenType] = []
         for token_type in TokenType:
@@ -134,22 +142,20 @@ class Scanner:
 
         if not len(possible_token_types):
             if c.isdigit():
-                current_token.type = TokenType.INTEGER_LITERAL
-                current_token.value = self.scan_integer_literal(c)
+                self.current_token.type = TokenType.INTEGER_LITERAL
+                self.current_token.value = self.scan_integer_literal(c)
             else:
                 raise EccoSyntaxError(f'Unrecognized token "{c}"')
         else:
             if len(c) == 1:
-                current_token.type = possible_token_types[0]
-                return True
+                self.current_token.type = possible_token_types[0]
+                return self.current_token
             else:
                 pass
 
-        return True
+        return self.current_token
 
     def scan_file(self) -> None:
         """Scans a file and prints out its Tokens"""
-        token: Token = Token()
-
-        while self.scan(token):
-            print(token)
+        while self.scan():
+            print(self.current_token)
