@@ -212,5 +212,6 @@ class Scanner:
             lexeme += next_character
         # 
         self.put_back(next_character)
+        lexeme = lexeme[: len(lexeme) - 1]  # Remove last character
         self.current_token.type = TokenType(lexeme)
         
