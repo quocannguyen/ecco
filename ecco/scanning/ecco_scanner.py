@@ -74,7 +74,7 @@ class Scanner:
             if next_character == "\n":
                 self.line_number += 1
 
-        if next_character == '\0':
+        if next_character == '':
             self.next_character_type = CharacterType.END_OF_FILE
         elif next_character.isalpha():
             self.next_character_type = CharacterType.ALPHA
@@ -102,7 +102,10 @@ class Scanner:
         Args:
             c (str): Character to put back into the input stream
         """
-        if len(c) != 1:
+        if (
+            len(c) != 1 and
+            self.next_character_type != CharacterType.END_OF_FILE  # Put back EOF
+        ):
             raise TypeError(
                 f"put_back() expected a character, but string of length {len(c)} found"
             )
